@@ -19,10 +19,18 @@ namespace WindowsForms_Asynchronous_Lesson
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Task.Run(() => GetData());
+            // Task と context を使うとPromise.thenのような非同期処理の書き方が出来る
+            var context = TaskScheduler.FromCurrentSynchronizationContext();
+            Task.Run(() => GetData()).ContinueWith(x=>
+            {
+                // UIスレッド上で行う処理
+                dataGridView1.DataSource = x.Result; //x.Result はGetData()の返り値
+                MessageBox.Show("完了");
+
+            }, context);
         }
 
-        private void GetData()
+        private List<DTO> GetData()
         {
             var result = new List<DTO>();
             for (int i = 0; i < 5; i++)
@@ -30,12 +38,7 @@ namespace WindowsForms_Asynchronous_Lesson
                 System.Threading.Thread.Sleep(1000);
                 result.Add(new DTO(i.ToString(), "Name" + i));
             }
-
-            this.Invoke((Action)delegate ()
-            {
-                dataGridView1.DataSource = result;
-                MessageBox.Show("完了");
-            });
+            return result;
         }
     }
 }
